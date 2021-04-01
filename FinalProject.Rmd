@@ -1,19 +1,106 @@
 ---
-title: "R Notebook"
-output: html_notebook
+title: "The effect of pollution on women's health in the U.S., China, India, Brazil, and Russia"
+author: Mandy Hooks, Natalia Jaffee, Amrita Sood
+date: "Spring 2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+```{r library and read in file, echo=FALSE, include=FALSE, results=FALSE}
+#If you ever load a library, please do it here
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(readxl)
+library(tidyr)
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+getwd()
 
-```{r}
-plot(cars)
+SDG_Data<-read_excel("./SDGEXCEL.xlsx", col_types = "text")
+
+#Set theme
+mytheme <- theme_classic() +
+  theme(axis.text = element_text(color = "black"), 
+        legend.position = "top")
+theme_set(mytheme)
+
+SDG_Data<- SDG_Data %>%
+  filter(`Country Name`=="Brazil"|`Country Name`=="China"|`Country Name`=="United States" | `Country Name`== "Russian Federation" |`Country Name`=="India") %>%
+  filter(`Indicator Name`== "CO2 emissions (metric tons per capita)" | `Indicator Name`=="PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)" |`Indicator Name`=="Renewable electricity output (% of total electricity output)"| `Indicator Name`=="Mortality from CVD, cancer, diabetes or CRD between exact ages 30 and 70, female (%)"|`Indicator Name`=="GDP per capita (current US$)") %>%
+  mutate(Year15 = `2015`) %>%
+  select(`Country Name`, `Indicator Name`, `Year15`) 
+
+SDG_Data$Year15<-as.numeric(SDG_Data$Year15)
+
+#Selected 2015 because it was the only year that had data in for everything
+
+
 ```
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
+```{r summary stats, echo=FALSE}
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+summarystats<- SDG_Data %>%
+  group_by(`Indicator Name`)%>%
+  summarize(variable.mean=signif(mean(`Year15`, na.rm=TRUE),5),
+              variable.median=signif(median(`Year15`, na.rm=TRUE),5),
+              variable.sd=signif(sd(`Year15`, na.rm=TRUE),4))
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+summary.table<-kable(summarystats, col.names = c("Variable", "Mean", "Median", "Standard Deviation"), caption = "Summary Statistics of Variables in Countries")
+summary.table
+
+```
+
+```{r spread, echo=FALSE}
+SDG_Data.short<-SDG_Data %>%
+  spread(`Indicator Name`, Year15)
+
+```
+
+```{r rename, echo=FALSE}
+
+SDG_Data.short<-SDG_Data.short %>%
+  rename(Country = `Country Name`, CO2 = `CO2 emissions (metric tons per capita)`, Mortality = `Mortality from CVD, cancer, diabetes or CRD between exact ages 30 and 70, female (%)`, GDP = `GDP per capita (current US$)`, PM2.5 = `PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)`, Renew = `Renewable electricity output (% of total electricity output)`)
+
+SDG_Data.short
+```
+```{r plots, echo=FALSE}
+#Put all plots here
+CO2plot<-ggplot(SDG_Data.short, aes(x= CO2, y= Mortality,  color = Country)) +
+  geom_point() +
+  labs(x = "CO2 emissions", y= "Mortality Rate", title= "This is no fun")
+
+CO2plot
+
+
+```
+```{r statistical analysis, echo=FALSE}
+#Something wrong with this, also I just put variables in, we can change them
+model<- lm(data = SDG_Data.short, GDP ~ Mortality + Renew + PM2.5 + CO2)
+summary(model)
+
+reg1<-lm(SDG_Data.short$GDP ~ SDG_Data.short$CO2)
+print(reg1)
+summary(reg1)
+
+reg2<-lm(SDG_Data.short$GDP ~ SDG_Data.short$PM2.5)
+print(reg2)
+summary(reg2)
+
+reg3<-lm(SDG_Data.short$PM2.5 ~ SDG_Data.short$Mortality)
+print(reg3)
+summary(reg3)
+
+reg4<-lm(SDG_Data.short$CO2 ~ SDG_Data.short$Renew)
+print(reg4)
+summary(reg4)
+
+reg5<-lm(SDG_Data.short$Mortality ~ SDG_Data.short$Renew)
+print(reg5)
+summary(reg5)
+```
+
 
