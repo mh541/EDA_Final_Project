@@ -1,0 +1,179 @@
+---
+title: "The effect of pollution on women's health in the U.S., China, India, Brazil, and Russia"
+author: Mandy Hooks, Natalia Jaffee, Amrita Sood
+date: "Spring 2021"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+
+```{r library and read in file, echo=FALSE, include=FALSE, results=FALSE}
+#If you ever load a library, please do it here
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(knitr)
+library(kableExtra)
+library(readxl)
+library(tidyr)
+library(GGally)
+library(agricolae)
+library(corrplot)
+library(lubridate)
+
+getwd()
+
+SDG_Data<-read_excel("./SDGEXCEL.xlsx", col_types = "text")
+
+#Set theme
+mytheme <- theme_classic() +
+  theme(axis.text = element_text(color = "black"), 
+        legend.position = "top")
+theme_set(mytheme)
+
+SDG_Data<- SDG_Data %>%
+  filter(`Country Name`=="Brazil"|`Country Name`=="China"|`Country Name`=="United States" | `Country Name`== "Russian Federation" |`Country Name`=="India" | `Country Name` == "Canada" | `Country Name`== "Argentina" | `Country Name`=="Chile" | `Country Name`== "Japan"| `Country Name`== "Germany" | `Country Name`=="Nigeria"| `Country Name`== "Saudi Arabia"| `Country Name`=="Indonesia") %>%
+  filter(`Indicator Name`== "CO2 emissions (metric tons per capita)" | `Indicator Name`=="PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)" |`Indicator Name`=="Renewable electricity output (% of total electricity output)"| `Indicator Name`=="Mortality from CVD, cancer, diabetes or CRD between exact ages 30 and 70, female (%)"|`Indicator Name`=="GDP per capita (current US$)"| `Indicator Name` == "Access to clean fuels and technologies for cooking (% of population)") %>%
+  mutate(Year15 = `2015`) %>%
+  select(`Country Name`, `Indicator Name`, `Year15`) 
+
+SDG_Data$Year15<-as.numeric(SDG_Data$Year15)
+
+#Selected 2015 because it was the only year that had data in for everything
+
+
+```
+
+```{r summary stats, echo=FALSE}
+
+summarystats<- SDG_Data %>%
+  group_by(`Indicator Name`)%>%
+  summarize(variable.mean=signif(mean(`Year15`, na.rm=TRUE),5),
+              variable.median=signif(median(`Year15`, na.rm=TRUE),5),
+              variable.sd=signif(sd(`Year15`, na.rm=TRUE),4))
+
+summary.table<-kable(summarystats, col.names = c("Variable", "Mean", "Median", "Standard Deviation"), caption = "Summary Statistics of Variables in Countries")
+summary.table
+
+```
+
+```{r spread, echo=FALSE}
+SDG_Data.short<-SDG_Data %>%
+  spread(`Indicator Name`, Year15)
+
+```
+
+```{r rename, echo=FALSE}
+
+SDG_Data.short<-SDG_Data.short %>%
+  rename(Country = `Country Name`, CO2 = `CO2 emissions (metric tons per capita)`, Mortality = `Mortality from CVD, cancer, diabetes or CRD between exact ages 30 and 70, female (%)`, GDP = `GDP per capita (current US$)`, PM2.5 = `PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)`, Renew = `Renewable electricity output (% of total electricity output)`, Access = `Access to clean fuels and technologies for cooking (% of population)`)
+
+SDG_Data.short
+```
+```{r plots, echo=FALSE}
+#Put all plots here
+CO2plot<-ggplot(SDG_Data.short, aes(x= CO2, y= Mortality,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "CO2 emissions", y= "Mortality Rate", title= "CO2 and Mortality")
+CO2plot
+
+PMplot<-ggplot(SDG_Data.short, aes(x= PM2.5, y= Mortality,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "PM2.5 Emissions", y= "Mortality Rate", title= "PM2.5 and Mortality")
+PMplot
+
+Accessplot<-ggplot(SDG_Data.short, aes(x= Access, y= Mortality,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "Access to clean Fuel for Cooking", y= "Mortality Rate", title= "Access to Clean Cooking Fuels and Mortality")
+Accessplot
+
+GDPAccessplot<-ggplot(SDG_Data.short, aes(x= GDP, y= Access,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "GDP ($)", y= "Access to clean fuel for cooking", title= "Access to Clean Cooking Fuels and GDP")
+GDPAccessplot
+```
+
+
+
+```{r statistical analysis, echo=FALSE}
+#Simple Linear Regression
+reg1<-lm(SDG_Data.short$GDP ~ SDG_Data.short$CO2)
+print(reg1)
+summary(reg1)
+
+reg2<-lm(SDG_Data.short$GDP ~ SDG_Data.short$PM2.5)
+print(reg2)
+summary(reg2)
+
+reg3<-lm(SDG_Data.short$PM2.5 ~ SDG_Data.short$Mortality)
+print(reg3)
+summary(reg3)
+
+reg4<-lm(SDG_Data.short$CO2 ~ SDG_Data.short$Renew)
+print(reg4)
+summary(reg4)
+
+reg5<-lm(SDG_Data.short$Mortality ~ SDG_Data.short$Renew)
+print(reg5)
+summary(reg5)
+
+#Matrix
+columns.select<- c(2:7)
+
+matrix<-ggpairs(SDG_Data.short, columns = columns.select)
+matrix
+
+#Log things
+SDG_Data.short$log.PM2.5<-as.numeric(log(SDG_Data.short$PM2.5))
+SDG_Data.short$log.Access<-as.numeric(log(SDG_Data.short$Access))
+
+SDG_Data.short<-SDG_Data.short %>%
+  mutate(log.PM2.5 = log.PM2.5) %>%
+  mutate(log.Access = log.Access)
+
+#New Matrix with logs
+columns.select2<- c(3:5, 7:9)
+matrix2<-ggpairs(SDG_Data.short, columns = columns.select2)
+matrix2
+
+#Can y'all decide which matrix you think is better
+
+#Something wrong with this, also I just put variables in, we can change them
+model<- lm(data = SDG_Data.short, GDP ~ Mortality + Renew + PM2.5 + CO2 +Access)
+summary(model)
+plot(model)
+#2nd best so far
+
+model2<-lm(data = SDG_Data.short, GDP ~ Mortality + Renew + log.PM2.5 + CO2 +log.Access)
+summary(model2)
+plot(model2)
+#the best out of all the ones I've tried
+
+model3<-lm(data = SDG_Data.short, CO2 ~ Mortality + Renew + log.PM2.5 + GDP +log.Access)
+summary(model3)
+plot(model3)
+#Trash
+
+```
+
+
+
+```{r anova, echo=FALSE}
+
+#Idk something wrong here, also have no idea what I'm doing
+SDG.anova.CO2<-aov(data=SDG_Data.short, CO2 ~ Country)
+summary(SDG.anova.CO2)
+
+SDG.anova.CO2.2<-lm(data=SDG_Data.short, CO2 ~ Country)
+summary(SDG.anova.CO2.2)
+
+plot(SDG.anova.CO2.2)
+
+```
+
+
