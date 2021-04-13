@@ -159,6 +159,10 @@ summary(model3)
 plot(model3)
 #Trash
 
+model4<-lm(data = SDG_Data.short, log.PM2.5 ~ Mortality + Renew + CO2 + log.Access + GDP)
+summary(model4)
+plot(model4)
+#this one could be good
 ```
 
 
