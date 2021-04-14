@@ -41,66 +41,75 @@ SDG_Data<- SDG_Data %>%
 SDG_Data$Year15<-as.numeric(SDG_Data$Year15)
 
 #Selected 2015 because it was the only year that had data in for everything
-
-
 ```
 
-```{r summary stats, echo=FALSE}
 
+
+
+```{r summary stats, echo=FALSE, message=FALSE}
 summarystats<- SDG_Data %>%
   group_by(`Indicator Name`)%>%
   summarize(variable.mean=signif(mean(`Year15`, na.rm=TRUE),5),
               variable.median=signif(median(`Year15`, na.rm=TRUE),5),
               variable.sd=signif(sd(`Year15`, na.rm=TRUE),4))
 
-summary.table<-kable(summarystats, col.names = c("Variable", "Mean", "Median", "Standard Deviation"), caption = "Summary Statistics of Variables in Countries")
+summary.table<-kable(summarystats, col.names = c("Variable", "Mean", "Median", "Standard Deviation"), caption = "Summary Statistics of Variables in Countries") %>%
+  kable_styling(latex_options="scale_down")
+
 summary.table
 
 ```
 
-```{r spread, echo=FALSE}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+```{r spread, echo=FALSE, message= FALSE}
 SDG_Data.short<-SDG_Data %>%
   spread(`Indicator Name`, Year15)
 
 ```
 
-```{r rename, echo=FALSE}
+```{r rename, echo=FALSE, message= FALSE}
 
 SDG_Data.short<-SDG_Data.short %>%
   rename(Country = `Country Name`, CO2 = `CO2 emissions (metric tons per capita)`, Mortality = `Mortality from CVD, cancer, diabetes or CRD between exact ages 30 and 70, female (%)`, GDP = `GDP per capita (current US$)`, PM2.5 = `PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)`, Renew = `Renewable electricity output (% of total electricity output)`, Access = `Access to clean fuels and technologies for cooking (% of population)`)
 
-SDG_Data.short
-```
-```{r plots, echo=FALSE}
-#Put all plots here
-CO2plot<-ggplot(SDG_Data.short, aes(x= CO2, y= Mortality,  color = Country)) +
-  geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black") +
-  labs(x = "CO2 emissions", y= "Mortality Rate", title= "CO2 and Mortality")
-CO2plot
-
-PMplot<-ggplot(SDG_Data.short, aes(x= PM2.5, y= Mortality,  color = Country)) +
-  geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black") +
-  labs(x = "PM2.5 Emissions", y= "Mortality Rate", title= "PM2.5 and Mortality")
-PMplot
-
-Accessplot<-ggplot(SDG_Data.short, aes(x= Access, y= Mortality,  color = Country)) +
-  geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black") +
-  labs(x = "Access to clean Fuel for Cooking", y= "Mortality Rate", title= "Access to Clean Cooking Fuels and Mortality")
-Accessplot
-
-GDPAccessplot<-ggplot(SDG_Data.short, aes(x= GDP, y= Access,  color = Country)) +
-  geom_point() +
-  geom_smooth(method = "lm", se=FALSE, color="black") +
-  labs(x = "GDP ($)", y= "Access to clean fuel for cooking", title= "Access to Clean Cooking Fuels and GDP")
-GDPAccessplot
 ```
 
 
 
-```{r statistical analysis, echo=FALSE}
+
+
+
+
+
+
+
+```{r statistical analysis, echo=FALSE, message=FALSE}
 #Simple Linear Regression
 reg1<-lm(SDG_Data.short$GDP ~ SDG_Data.short$CO2)
 print(reg1)
@@ -167,17 +176,42 @@ plot(model4)
 
 
 
-```{r anova, echo=FALSE}
+```{r anova, echo=FALSE, message= FALSE}
 
 #Idk something wrong here, also have no idea what I'm doing
-SDG.anova.CO2<-aov(data=SDG_Data.short, CO2 ~ Country)
-summary(SDG.anova.CO2)
+SDG.anova.Pm2.5<-aov(data=SDG_Data.short, log.PM2.5 ~ Mortality)
+summary(SDG.anova.Pm2.5)
 
-SDG.anova.CO2.2<-lm(data=SDG_Data.short, CO2 ~ Country)
-summary(SDG.anova.CO2.2)
+SDG.anova.Pm2.5.2<-lm(data=SDG_Data.short,log.PM2.5 ~ Mortality)
+summary(SDG.anova.Pm2.5.2)
 
-plot(SDG.anova.CO2.2)
+plot(SDG.anova.Pm2.5.2)
 
 ```
 
+```{r plots, echo=FALSE, message= FALSE}
+#Put all plots here
+CO2plot<-ggplot(SDG_Data.short, aes(x= CO2, y= Mortality,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "CO2 emissions", y= "Mortality Rate", title= "CO2 and Mortality")
 
+
+PMplot<-ggplot(SDG_Data.short, aes(x= PM2.5, y= Mortality,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "PM2.5 Emissions", y= "Mortality Rate", title= "PM2.5 and Mortality")
+PMplot
+
+Accessplot<-ggplot(SDG_Data.short, aes(x= Access, y= Mortality,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "Access to clean Fuel for Cooking", y= "Mortality Rate", title= "Access to Clean Cooking Fuels and Mortality")
+Accessplot
+
+GDPAccessplot<-ggplot(SDG_Data.short, aes(x= GDP, y= Access,  color = Country)) +
+  geom_point() +
+  geom_smooth(method = "lm", se=FALSE, color="black") +
+  labs(x = "GDP ($)", y= "Access to clean fuel for cooking", title= "Access to Clean Cooking Fuels and GDP")
+GDPAccessplot
+```
