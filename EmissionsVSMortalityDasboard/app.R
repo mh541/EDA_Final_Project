@@ -42,7 +42,12 @@ ui <- fluidPage(
             multiple=TRUE
             
         ),
-        
+        #selectPM2.5
+        sliderInput(inputId = "x",
+                    label = "pm2.5",
+                    min = ("10"),
+                    max = ("40"),
+                    value = c("10", "40"),
         
         
         # Output
