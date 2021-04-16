@@ -1,49 +1,84 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
+#### Load packages ----
 library(shiny)
 
-# Define UI for application that draws a histogram
+
+
+library(tidyverse)
+library(readxl)
+
+
+
+
+#### Load data ----
+SDG_Data <- read_excel("../SDGEXCEL.xlsx")
+
+
+
+SDG_Data<- SDG_Data %>%
+    filter(`Country Name`=="Brazil"|`Country Name`=="China"|`Country Name`=="United States" | `Country Name`== "Russian Federation" |`Country Name`=="India" | `Country Name` == "Canada" | `Country Name`== "Argentina" | `Country Name`=="Chile" | `Country Name`== "Japan"| `Country Name`== "Germany" | `Country Name`=="Nigeria"| `Country Name`== "Saudi Arabia"| `Country Name`=="Indonesia") %>%
+    filter(`Indicator Name`== "CO2 emissions (metric tons per capita)" | `Indicator Name`=="PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)" |`Indicator Name`=="Renewable electricity output (% of total electricity output)"| `Indicator Name`=="Mortality from CVD, cancer, diabetes or CRD between exact ages 30 and 70, female (%)"|`Indicator Name`=="GDP per capita (current US$)"| `Indicator Name` == "Access to clean fuels and technologies for cooking (% of population)") %>%
+    mutate(Year15 = `2015`) %>%
+    select(`Country Name`, `Indicator Name`, `Year15`) 
+SDG_Data$Year15<-as.numeric(SDG_Data$Year15)
+
+
+
+
+SDG_Data.short<-SDG_Data %>%
+    spread(`Indicator Name`, Year15)
+
+
+
+SDG_Data.short<-SDG_Data.short %>%
+    rename(Country = `Country Name`, CO2 = `CO2 emissions (metric tons per capita)`, Mortality = `Mortality from CVD, cancer, diabetes or CRD between exact ages 30 and 70, female (%)`, GDP = `GDP per capita (current US$)`, PM2.5 = `PM2.5 air pollution, mean annual exposure (micrograms per cubic meter)`, Renew = `Renewable electricity output (% of total electricity output)`, Access = `Access to clean fuels and technologies for cooking (% of population)`)
+
+
+
+#### Define UI ----
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
+    titlePanel("CO2 emissions versus Mortality Rate"),
     sidebarLayout(
         sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+            
+            # Select nutrient to plot
+            selectInput(inputId = "y", 
+                        label = "Country Name",
+                        choices = c("Brazil", "China", "United States", "Russian Federation", "India"), 
+                        selected = "Brazil"),
+            multiple=TRUE
+            
         ),
-
-        # Show a plot of the generated distribution
+        
+        
+        
+        # Output
         mainPanel(
-           plotOutput("distPlot")
-        )
-    )
-)
+            plotOutput("scatterplotty")
+        )))
 
-# Define server logic required to draw a histogram
+
+
+#### Define server  ----
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
+    
+    # Create a ggplot object for the type of plot you have defined in the UI  
+    output$scatterplotty <- renderPlot({
+        ggplot(SDG_Data.short, 
+               aes(x = CO2, y = Mortality,fill=input$y)) +
+            geom_point(alpha = 0.8, size = 2) +
+            theme_classic(base_size = 14) +
+            scale_shape_manual(values = c(21, 24)) +
+            labs(x = "CO2 emissions (metric tons per capita)", y = "Mortality", shape = "Country Name", fill = "Mortality") +
+            scale_fill_distiller(palette = "YlOrBr", guide = "colorbar", direction = 1)
+        #scale_fill_viridis_c(option = "viridis", begin = 0, end = 0.8, direction = -1)
     })
+    
+    
 }
 
-# Run the application 
+
+
+
+#### Create the Shiny app object ----
 shinyApp(ui = ui, server = server)
+
