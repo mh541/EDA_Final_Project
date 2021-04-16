@@ -1,13 +1,7 @@
 #### Load packages ----
 library(shiny)
-
-
-
 library(tidyverse)
 library(readxl)
-
-
-
 
 #### Load data ----
 SDG_Data <- read_excel("../SDGEXCEL.xlsx")
@@ -43,7 +37,7 @@ ui <- fluidPage(
             # Select nutrient to plot
             selectInput(inputId = "y", 
                         label = "Country Name",
-                        choices = c("Brazil", "China", "United States", "Russian Federation", "India"), 
+                        choices = c("Brazil", "China", "United States", "Russian Federation", "India", "Canada", "Argentina" ,"Chile" , "Japan", "Germany","Nigeria", "Saudi Arabia","Indonesia"), 
                         selected = "Brazil"),
             multiple=TRUE
             
@@ -75,6 +69,7 @@ server <- function(input, output) {
     
     
 }
+
 
 
 
